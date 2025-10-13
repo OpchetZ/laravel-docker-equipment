@@ -8,6 +8,9 @@ COPY .bashrc /root/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# ติดตั้ง ping (อยู่ใน package iputils-ping)
+RUN apt-get update && apt-get install -y iputils-ping
+
 # mix
 RUN apt-get update \
   && apt-get install -y build-essential zlib1g-dev default-mysql-client curl gnupg procps vim git unzip libzip-dev libpq-dev \
