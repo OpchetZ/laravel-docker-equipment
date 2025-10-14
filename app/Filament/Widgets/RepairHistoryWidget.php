@@ -33,22 +33,31 @@ class RepairHistoryWidget extends BaseWidget
                     ->formatStateUsing(function ($record) {
                         $device = $record->repairable;
                         if ($device instanceof Pc) {
-                            return '💻 PC: ' . ($device->service_tag ?? $device->computer_name);
+                            return '💻 PC: ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Service_tag:' . ($device->service_tag ?? 'ไม่มีเลขผลิตภัณฑ์');
                         } elseif ($device instanceof Monitor) {
                             // แก้ไข: ใช้ serial_number ตามโค้ดเดิมของคุณ
-                            return '🖥️ Monitor: ' . ($device->serialnum ?? $device->brand);
+                            return '🖥️ Monitor: ' . ($device->monimodel ?? 'ไม่รู้โมเดล') . ' Serial Number: ' . ($device->serialnum ?? $device->brand);
                         }
                         return 'N/A';
                     }),
                 Tables\Columns\TextColumn::make('description')
                     ->label('อาการ / รายละเอียด')
                     ->wrap()->limit(50),
+                Tables\Columns\TextColumn::make('warantee')
+                    ->label('ประกัน')
+                    ->dateTime('d/m/Y'), 
+                Tables\Columns\TextColumn::make('caseno')
+                    ->label('Case No'), 
+                
+                Tables\Columns\TextColumn::make('claimnotidate')
+                    ->label('วันที่แจ้งซ่อม')
+                    ->dateTime('d/m/Y H:i'),
+                Tables\Columns\TextColumn::make('completed_at')
+                    ->label('วันที่เสร็จ')
+                    ->dateTime('d/m/Y H:i'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('สถานะ')
                     ->badge(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('วันที่แจ้งซ่อม')
-                    ->dateTime('d/m/Y H:i'),
             ])
             ->headerActions([
                 // ปุ่ม "สร้าง" ที่มุมบนขวา
@@ -76,7 +85,7 @@ class RepairHistoryWidget extends BaseWidget
                                 if ($type === Monitor::class) {
                                     // ถ้าเป็น Monitor ให้แสดง serial_number
                                     return Monitor::all()->mapWithKeys(function ($monitor) {
-                                        return [$monitor->id => $monitor->serial_number ?? '(ไม่มี Serial Number)'];
+                                        return [$monitor->id => ($monitor->monimodel ?? 'ไม่รู้โมเดล') . '-' .($monitor->serialnum ?? '(ไม่มี Serial Number)')];
                                   });
                                 }
                                 return [];
