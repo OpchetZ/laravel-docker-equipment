@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\RepairStatus;
+use App\Models\Equipment;
 use App\Models\Monitor;
 use App\Models\Pc;
 use App\Models\Repair;
@@ -29,17 +30,43 @@ class RepairHistoryWidget extends BaseWidget
             ->paginated([5, 25,'all'])
             ->columns([
                 Tables\Columns\TextColumn::make('repairable')
-                    ->label('อุปกรณ์')
-                    ->formatStateUsing(function ($record) {
-                        $device = $record->repairable;
-                        if ($device instanceof Pc) {
-                            return '💻 PC: ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Service_tag:' . ($device->service_tag ?? 'ไม่มีเลขผลิตภัณฑ์');
-                        } elseif ($device instanceof Monitor) {
-                            // แก้ไข: ใช้ serial_number ตามโค้ดเดิมของคุณ
-                            return '🖥️ Monitor: ' . ($device->monimodel ?? 'ไม่รู้โมเดล') . ' Serial Number: ' . ($device->serialnum ?? $device->brand);
-                        }
-                        return 'N/A';
-                    }),
+    ->label('อุปกรณ์')
+    ->formatStateUsing(function ($record) {
+        $device = $record->repairable; // ดึงข้อมูลอุปกรณ์จาก Relation
+        
+        // ถ้าไม่มีข้อมูลอุปกรณ์เลย ให้โชว์ N/A
+        if (! $device) {
+            return 'N/A';
+        }
+
+        // เช็คจากประเภทแทน (สมมติว่าคุณใช้คอลัมน์ category เก็บประเภท Laptop, Monitor, PC)
+        if ($device->category == 'PC') {
+            return 'PC: '. ($device->brand_name) .' '. ($device->model ?? 'ไม่รู้โมเดล') . ' Serial Number: ' . ($device->serial_number ?? 'ไม่มีเลขผลิตภัณฑ์');
+        } 
+        elseif ($device->category == 'Monitor') {
+            return 'Monitor: '. ($device->brand_name) .' ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Serial Number: ' . ($device->serial_number ?? $device->brand);
+        }
+        elseif ($device->category == 'Laptop') {
+            return 'Laptop: '. ($device->brand_name) .' ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Serial Number ' . ($device->serial_number ?? 'ไม่มีเลขผลิตภัณฑ์');
+        }
+        elseif ($device->category == 'Printer') {
+            return 'Printer: '. ($device->brand_name) .' ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Serial Number ' . ($device->serial_number ?? 'ไม่มีเลขผลิตภัณฑ์');
+        }
+
+        return 'N/A'; // ถ้าเป็นประเภทอื่นที่ไม่เข้าเงื่อนไข
+    }),
+                // Tables\Columns\TextColumn::make('repairable')
+                //     ->label('อุปกรณ์')
+                //     ->formatStateUsing(function ($record) {
+                //         $device = $record->repairable;
+                //         if ($device instanceof Pc) {
+                //             return '💻 PC: ' . ($device->model ?? 'ไม่รู้โมเดล') . ' Service_tag:' . ($device->service_tag ?? 'ไม่มีเลขผลิตภัณฑ์');
+                //         } elseif ($device instanceof Monitor) {
+                //             // แก้ไข: ใช้ serial_number ตามโค้ดเดิมของคุณ
+                //             return '🖥️ Monitor: ' . ($device->monimodel ?? 'ไม่รู้โมเดล') . ' Serial Number: ' . ($device->serialnum ?? $device->brand);
+                //         }
+                //         return 'N/A';
+                //     }),
                 Tables\Columns\TextColumn::make('description')
                     ->label('อาการ / รายละเอียด')
                     ->wrap()->limit(50),
@@ -65,33 +92,70 @@ class RepairHistoryWidget extends BaseWidget
                     ->label('แจ้งซ่อมรายการใหม่')
                     ->icon('heroicon-o-plus-circle')
                     ->form([
+                        // Select::make('repairable_type')
+                        //     ->label('ประเภทอุปกรณ์')
+                        //     ->options([
+                        //         Pc::class => 'Computer (PC)',
+                        //         Monitor::class => 'Monitor',
+                        //     ])
+                        //     ->live()
+                        //     ->required(),
                         Select::make('repairable_type')
                             ->label('ประเภทอุปกรณ์')
                             ->options([
-                                Pc::class => 'Computer (PC)',
-                                Monitor::class => 'Monitor',
+                                'Laptop' => 'Laptop',
+                                'Monitor' => 'Monitor',
+                                'Printer' => 'Printer',
+                                'PC' => 'PC',
                             ])
                             ->live()
                             ->required(),
                         Select::make('repairable_id')
-                            ->label('อุปกรณ์ (Service Tag / Serial No.)')
+                            ->label('อุปกรณ์')
                             ->options(function ($get) {
                                 $type = $get('repairable_type');
-                                if ($type === Pc::class) {
-                                    // ถ้าเป็น PC ให้แสดง service_tag
-                                    return Pc::all()->mapWithKeys(function ($pc) {
-                                        return [$pc->id => ($pc->computer_name ?? '(ไม่มีชื่อเครื่อง)') . '-' .($pc->service_tag ?? '(ไม่มี Service Tag)')];
-                                    });                                }
-                                if ($type === Monitor::class) {
-                                    // ถ้าเป็น Monitor ให้แสดง serial_number
-                                    return Monitor::all()->mapWithKeys(function ($monitor) {
-                                        return [$monitor->id => ($monitor->monimodel ?? 'ไม่รู้โมเดล') . '-' .($monitor->serialnum ?? '(ไม่มี Serial Number)')];
-                                  });
+                                if ($type == 'Laptop'){
+                                    return Equipment::where('category', 'Laptop')
+                                        ->selectRaw("CONCAT(brand_name,' - ',model, ' - ', serial_number) as full_name, id")
+                                        ->pluck('full_name', 'id'); 
                                 }
-                                return [];
+                                elseif($type == 'Pc'){
+                                    return Equipment::where('category', 'Pc')
+                                        ->selectRaw("CONCAT(brand_name,' - ',model, ' - ', serial_number) as full_name, id")
+                                        ->pluck('full_name', 'id'); 
+                                }
+                                elseif($type == 'Printer'){
+                                    return Equipment::where('category', 'Printer')
+                                        ->selectRaw("CONCAT(brand_name,' - ',model, ' - ', serial_number) as full_name, id")
+                                        ->pluck('full_name', 'id'); 
+                                }
+                                elseif($type == 'Monitor'){
+                                    return Equipment::where('category', 'Monitor')
+                                        ->selectRaw("CONCAT(brand_name,' - ',model, ' - ', serial_number) as full_name, id")
+                                        ->pluck('full_name', 'id'); 
+                                }
                             })
                             ->searchable()
                             ->required(),
+                        // Select::make('repairable_id')
+                        //     ->label('อุปกรณ์ (Service Tag / Serial No.)')
+                        //     ->options(function ($get) {
+                        //         $type = $get('repairable_type');
+                        //         if ($type === Pc::class) {
+                        //             // ถ้าเป็น PC ให้แสดง service_tag
+                        //             return Pc::all()->mapWithKeys(function ($pc) {
+                        //                 return [$pc->id => ($pc->computer_name ?? '(ไม่มีชื่อเครื่อง)') . '-' .($pc->service_tag ?? '(ไม่มี Service Tag)')];
+                        //             });                                }
+                        //         if ($type === Monitor::class) {
+                        //             // ถ้าเป็น Monitor ให้แสดง serial_number
+                        //             return Monitor::all()->mapWithKeys(function ($monitor) {
+                        //                 return [$monitor->id => ($monitor->monimodel ?? 'ไม่รู้โมเดล') . '-' .($monitor->serialnum ?? '(ไม่มี Serial Number)')];
+                        //           });
+                        //         }
+                        //         return [];
+                        //     })
+                        //     ->searchable()
+                        //     ->required(),
                         \Filament\Forms\Components\DatePicker::make('warantee') // 📅 ใช้ DatePicker
                             ->label('วันหมดประกัน'), // ไม่ required เพราะใน DB เป็น nullable
                         \Filament\Forms\Components\TextInput::make('caseno') // ✍️ ใช้ TextInput

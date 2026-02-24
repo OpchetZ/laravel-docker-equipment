@@ -21,4 +21,9 @@ class repair extends Model
     {
         return $this->morphTo();
     }
+    public function equipment()
+{
+    // หมายความว่า การซ่อม 1 ครั้ง เป็นของอุปกรณ์ 1 ชิ้น
+    return $this->belongsTo(Equipment::class); 
+}
 }

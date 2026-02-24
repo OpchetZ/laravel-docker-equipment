@@ -119,4 +119,8 @@ class OwnerResource extends Resource
             'edit' => Pages\EditOwner::route('/{record}/edit'),
         ];
     }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! env('HIDE_EQUIPMENT', false);
+    }
 }

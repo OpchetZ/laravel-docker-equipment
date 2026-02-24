@@ -83,4 +83,8 @@ class MonitorResource extends Resource
             'edit' => Pages\EditMonitor::route('/{record}/edit'),
         ];
     }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! env('HIDE_EQUIPMENT', true);
+    }
 }

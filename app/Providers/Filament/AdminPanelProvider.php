@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
+use App\Filament\Resources\EmployResource\Widgets\EmployEquipTable;
 use App\Filament\Resources\OwnerResource\Widgets\OwnerPcMonitorTable;
 use App\Filament\Widgets\RepairHistoryWidget;
 use Filament\Http\Middleware\Authenticate;
@@ -41,9 +42,11 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // Widgets\AccountWidget::class,
-                \App\Filament\Resources\PcResource\Widgets\PcCountWidget::class,
+                \App\Filament\Resources\EquipmentResource\Widgets\EquipmentcountWidget::class,
+                // \App\Filament\Resources\PcResource\Widgets\PcCountWidget::class,
                 RepairHistoryWidget::class,
-                OwnerPcMonitorTable::class,
+                EmployEquipTable::class,
+                // OwnerPcMonitorTable::class,
 
                 
             ])

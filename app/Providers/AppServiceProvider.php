@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Model::unguard();
+        Relation::enforceMorphMap([
+            'Laptop' => Equipment::class,
+            'Monitor' => Equipment::class,
+            'Printer' => Equipment::class,
+            'PC' => Equipment::class,
+        ]);
     }
 }

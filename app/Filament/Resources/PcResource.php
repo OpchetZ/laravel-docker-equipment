@@ -187,4 +187,8 @@ class PcResource extends Resource
             'edit' => Pages\EditPc::route('/{record}/edit'),
         ];
     }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! env('HIDE_EQUIPMENT', false);
+    }
 }
