@@ -75,7 +75,7 @@ class EquipmentRelationManager extends RelationManager
                     ->icon('heroicon-o-plus-circle')
                     ->form([
                         Forms\Components\Select::make('serial_number')
-                            ->label('เลือก Monitor')
+                            ->label('เลือก อุปกรณ์')
                             ->options(Equipment::whereNull('employ_id')->get()->mapWithKeys(fn ($pc) => [$pc->id => ($pc->brand_name ?? '(ไม่ระบุ)') . '-' . ($pc->serial_number ?? '(ไม่ระบุ)')]))
                             ->searchable()
                             ->required(),
@@ -94,7 +94,7 @@ class EquipmentRelationManager extends RelationManager
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                 ->action(function ($record) {
-                        $record->owner_id = null;
+                        $record->employ_id = null;
                         $record->save();
                     })
                     ->label('เอาเครื่องออก')
@@ -104,7 +104,7 @@ class EquipmentRelationManager extends RelationManager
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                     ->action(function ($record) {
-                        $record->owner_id = null;
+                        $record->employ_id = null;
                         $record->save();
                     })
                     ->label('เอาเครื่องออก')
